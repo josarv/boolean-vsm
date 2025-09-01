@@ -91,8 +91,11 @@ class Contractions(object):
                         # This performs sum(n * m! / (m-x)! * (x+1) for x in range(m)) * m total iterations
                         for opt in perm:
                             text1 = pattern.sub(opt, text1, count=1)
+                        # hyp.append((text1, self.kv_model.wmdistance(
+                        #            text.split(), text1.split()), len(self.lc_tool.check(text1))))
+                        # improper tokenization, such as "aren't i?" -> "I?" would have produce tokens out of the corpus
                         hyp.append((text1, self.kv_model.wmdistance(
-                                    text.split(), text1.split()), len(self.lc_tool.check(text1))))
+                                     self._tokenize(text), self._tokenize(text1)), len(self.lc_tool.check(text1))))
                 hyp = sorted(hyp, key=lambda x: (x[2], x[1]))
                 # The text of the first item is most likely correct
                 text = hyp[0][0]
@@ -128,3 +131,9 @@ class Contractions(object):
             for pattern, rep in expansions.items():
                 text = pattern.sub(rep, text)
             yield text
+
+    def _tokenize(self, text):
+        from nltk.tokenize import word_tokenize
+        from string import punctuation
+        tokens = word_tokenize(text)
+        return [t for t in tokens if t not in punctuation]

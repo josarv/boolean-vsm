@@ -93,7 +93,8 @@ simple_contractions = {
     compile(r"\by'?all'?ve\b", IGNORECASE): "you all have",
     compile(r"\byou'?d'?ve\b", IGNORECASE): "you would have",
     compile(r"\byou'?re\b", IGNORECASE): "you are",
-    compile(r"\byou'?ve\b", IGNORECASE): "you have"
+    compile(r"\byou'?ve\b", IGNORECASE): "you have",
+    compile(r"\baren'?t I\b(?=\W|$)", IGNORECASE): "am I not", # needs some testing, do i need to add a "are not I" case and make it contextual?
 }
 
 

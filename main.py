@@ -21,17 +21,3 @@ from os.path import join
         #         inverted_index[token] = {}
         #     if document_id not in inverted_index[token]:
         #         inverted_index[token].append(document_id)
-
-
-from project.preprocess import expand_contractions
-
-# text = "I'm going to the store. You shouldn't forget your keys. They'll be there soon."
-# text = "I'd love to shed light on that."
-# text = "My brother and I aren't on speaking terms."
-text = "Aren't I?"
-
-print(f"Original text: {text}")
-
-expanded_text = expand_contractions(text)
-
-print(f"Expanded text: {expanded_text}")

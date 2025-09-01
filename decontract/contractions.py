@@ -115,7 +115,7 @@ contextual_contractions = {
     compile(r"\bit'?ll'?ve\b", IGNORECASE): ["it shall have", "it will have"],
     # Possessive form does not have apostrophe
     compile(r"\bit's\b", IGNORECASE): ["it has", "it is"],
-    compile(r"\bshe'?d\b", IGNORECASE): ["she had", "she would"],
+    compile(r"\bshe'?d\b", IGNORECASE): ["she had", "she would", "shed"],
     compile(r"\bshe'll\b", IGNORECASE): ["she shall", "she will"],
     compile(r"\bshe'?ll'?ve\b", IGNORECASE): ["she shall have", "she will have"],
     compile(r"\bshe'?s\b", IGNORECASE): ["she has", "she is"],

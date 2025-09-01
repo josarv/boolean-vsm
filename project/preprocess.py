@@ -10,8 +10,12 @@ from nltk.stem import WordNetLemmatizer
 
 # decontract and nltk initialization
 
+print("Initializing contractions...")
+
 contractions = Contractions(api_key="glove-twitter-25")
 contractions.load_models()
+
+print("Initializing nltk...")
 
 download('punkt_tab')
 download('stopwords')
@@ -25,7 +29,7 @@ def compose(*functions):
     return reduce(lambda f, g: lambda x: g(f(x)), functions, lambda x: x)
 
 def expand_contractions(text):
-    return list(contractions.expand_texts([text]))
+    return list(contractions.expand_texts([text], precise=True))[0]
 
 def tokenize(text):
     return word_tokenize(text)
@@ -90,16 +94,16 @@ def strip_pos_tags(tokens):
     return list(map(lambda x: x[0], tokens))
 
 preprocessing_pipeline = compose(
-    # expand_contractions,
+    expand_contractions,
     tokenize,
     lowercase,
     # remove_punctuation_tokens,
     # remove_digit_tokens,
-    remove_stopwords,
-    remove_too_short_tokens,
-    add_penn_treebank_tags,
-    convert_penn_treebank_to_wordnet_tags,
-    lemmatize,
+    # remove_too_short_tokens,
+    # add_penn_treebank_tags,
+    # convert_penn_treebank_to_wordnet_tags,
+    # lemmatize,
     # map_to_synonyms,
-    strip_pos_tags
+    # strip_pos_tags,
+    # remove_stopwords,
 )

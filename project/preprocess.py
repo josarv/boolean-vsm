@@ -91,18 +91,3 @@ def map_to_synonyms(tokens):
 
 def strip_pos_tags(tokens):
     return list(map(lambda x: x[0], tokens))
-
-preprocessing_pipeline = compose(
-    expand_contractions,
-    tokenize,
-    lowercase,
-    # remove_punctuation_tokens,
-    # remove_digit_tokens,
-    # remove_too_short_tokens,
-    add_penn_treebank_tags,
-    convert_penn_treebank_to_wordnet_tags,
-    lemmatize,
-    # map_to_synonyms,
-    strip_pos_tags,
-    remove_stopwords,
-)

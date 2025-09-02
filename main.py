@@ -21,3 +21,38 @@ from os.path import join
         #         inverted_index[token] = {}
         #     if document_id not in inverted_index[token]:
         #         inverted_index[token].append(document_id)
+
+# from project.preprocess import compose, tokenize, lowercase, add_penn_treebank_tags, convert_penn_treebank_to_wordnet_tags, lemmatize, strip_pos_tags, remove_stopwords, remove_punctuation_tokens
+# from boolean import preserve_boolean_operators
+#
+# preprocessing_pipeline = compose(
+#     # expand_contractions,
+#     tokenize,
+#     lowercase,
+#     remove_punctuation_tokens,
+#     # remove_digit_tokens,
+#     # remove_too_short_tokens,
+#     add_penn_treebank_tags,
+#     convert_penn_treebank_to_wordnet_tags,
+#     lemmatize,
+#     # map_to_synonyms,
+#     strip_pos_tags,
+#     remove_stopwords,
+# )
+#
+# query_pipeline = preserve_boolean_operators(preprocessing_pipeline)
+
+from boolean import ASTAndNode, ASTOrNode, ASTNotNode, ASTTermNode, display_ast_preorder
+from boolean.transformation import NNFTransformer, CNFTransformer, Simplifier
+# tree = ASTAndNode([ASTTermNode("apple"), ASTOrNode([ASTTermNode("banana"), ASTNotNode(ASTTermNode("Car"))])])
+# tree = ASTNotNode(ASTAndNode([ASTTermNode("banana"), ASTTermNode("Car")]))
+# tree = ASTOrNode([ASTNotNode(ASTAndNode([ASTTermNode("apple"), ASTOrNode([ASTTermNode("banana"), ASTTermNode("cherry")])])), ASTTermNode("date")])
+# display_ast_preorder(tree)
+# tree = NNFTransformer().transform(tree)
+# tree = ASTOrNode([ASTNotNode(ASTTermNode("A")), ASTAndNode([ASTNotNode(ASTTermNode("B")), ASTNotNode(ASTTermNode("C"))]), ASTTermNode("D")])
+# display_ast_preorder(tree)
+# tree = CNFTransformer().transform(tree)
+tree = ASTAndNode([ASTOrNode([ASTTermNode("A"), ASTTermNode("B")]), ASTOrNode([ASTTermNode("A"), ASTAndNode([ASTTermNode("B"), ASTTermNode("C")])])])
+display_ast_preorder(tree)
+tree = Simplifier().transform(tree) # TODO: robustify
+display_ast_preorder(tree)

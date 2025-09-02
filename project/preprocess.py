@@ -54,7 +54,6 @@ def add_penn_treebank_tags(tokens):
     return pos_tagged_tokens
 
 def map_penn_treebank_to_wordnet_tag(token):
-    # TODO: convert to match statement
     if token.startswith('J'):
         return wordnet.ADJ
     elif token.startswith('V'):
@@ -100,10 +99,10 @@ preprocessing_pipeline = compose(
     # remove_punctuation_tokens,
     # remove_digit_tokens,
     # remove_too_short_tokens,
-    # add_penn_treebank_tags,
-    # convert_penn_treebank_to_wordnet_tags,
-    # lemmatize,
+    add_penn_treebank_tags,
+    convert_penn_treebank_to_wordnet_tags,
+    lemmatize,
     # map_to_synonyms,
-    # strip_pos_tags,
-    # remove_stopwords,
+    strip_pos_tags,
+    remove_stopwords,
 )

@@ -10,15 +10,6 @@ class AST:
     def __repr__(self):
         return f"AST({self.query}, {self.root})"
 
-    # TODO: add transformation support, ast pipeline of transformers
-    # transformers are standalone classes,
-    # with a main method that takes in the tree in the form of ASTNode (root),
-    # and spits out the transformed tree
-    # as well as auxiliary methods
-    # we should be able to pass in and apply a sequence of transformations
-    # maybe like our preprocessing composition?
-    # def compose(*functions):
-    #     return reduce(lambda f, g: lambda x: g(f(x)), functions, lambda x: x)
 
 class ASTNode(Protocol):
     def evaluate(self, inverted_index: "InvertedIndex") -> Set[int]: ...
@@ -95,7 +86,7 @@ class ASTFalseNode:
     def __repr__(self) -> str:
         return "FALSE"
 
-# TODO: make proper display functions
+# TODO: make proper display functions, maybe methods of AST class?
 def display_ast_preorder(node: ASTNode, indent: int = 0):
     prefix = "  " * indent
     print(f"{prefix}{node}")

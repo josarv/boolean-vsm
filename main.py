@@ -41,18 +41,3 @@ from os.path import join
 # )
 #
 # query_pipeline = preserve_boolean_operators(preprocessing_pipeline)
-
-from boolean import ASTAndNode, ASTOrNode, ASTNotNode, ASTTermNode, display_ast_preorder
-from boolean.transformation import NNFTransformer, CNFTransformer, Simplifier
-# tree = ASTAndNode([ASTTermNode("apple"), ASTOrNode([ASTTermNode("banana"), ASTNotNode(ASTTermNode("Car"))])])
-# tree = ASTNotNode(ASTAndNode([ASTTermNode("banana"), ASTTermNode("Car")]))
-# tree = ASTOrNode([ASTNotNode(ASTAndNode([ASTTermNode("apple"), ASTOrNode([ASTTermNode("banana"), ASTTermNode("cherry")])])), ASTTermNode("date")])
-# display_ast_preorder(tree)
-# tree = NNFTransformer().transform(tree)
-# tree = ASTOrNode([ASTNotNode(ASTTermNode("A")), ASTAndNode([ASTNotNode(ASTTermNode("B")), ASTNotNode(ASTTermNode("C"))]), ASTTermNode("D")])
-# display_ast_preorder(tree)
-# tree = CNFTransformer().transform(tree)
-tree = ASTAndNode([ASTOrNode([ASTTermNode("A"), ASTTermNode("B")]), ASTOrNode([ASTTermNode("A"), ASTAndNode([ASTTermNode("B"), ASTTermNode("C")])])])
-display_ast_preorder(tree)
-tree = Simplifier().transform(tree) # TODO: robustify
-display_ast_preorder(tree)

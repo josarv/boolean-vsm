@@ -34,7 +34,7 @@ class NNFTransformer(Transformer):
         # BUT it won't work as ASTTermNode('a') and another ASTTermNode('a')
         # are seen as different objects, so set sees them as different
         # for this to work, we need ASTNodes to implement __hash__ and __eq__
-        # even then, ASTAndNode might contain lists which are unhashable
+        # even then, ASTAndNode contains lists which are unhashable
         # therefore:
         seen = set()
         unique_children = []
@@ -243,4 +243,258 @@ class Simplifier(Transformer):
     def visit_ASTFalseNode(self, node: ASTFalseNode) -> ASTNode:
         return node
 
-# TODO: add pipeline facility
+    class RobustSimplifier(Transformer):
+        """
+        Safely simplifies an AST, handling edge cases:
+        - Flatten AND/OR nodes
+        - Remove duplicates
+        - Fold constants
+        - Handle absorption carefully
+        - Replace empty AND/OR with TRUE/FALSE
+        """
+
+        def visit_ASTAndNode(self, node: ASTAndNode) -> ASTNode:
+            children = [self.transform(c) for c in node.children]
+
+            # Flatten nested ANDs and remove duplicates
+            flattened = []
+            seen = set()
+            for c in children:
+                if isinstance(c, ASTAndNode):
+                    for gc in c.children:
+                        key = repr(gc)
+                        if key not in seen:
+                            seen.add(key)
+                            flattened.append(gc)
+                else:
+                    key = repr(c)
+                    if key not in seen:
+                        seen.add(key)
+                        flattened.append(c)
+
+            # Constant folding
+            if any(isinstance(c, ASTFalseNode) for c in flattened):
+                return ASTFalseNode()
+            flattened = [c for c in flattened if not isinstance(c, ASTTrueNode)]
+            if not flattened:
+                return ASTTrueNode()
+            if len(flattened) == 1:
+                return flattened[0]
+
+            # Absorption: remove OR children that are redundant
+            result_children = []
+            for c in flattened:
+                if isinstance(c, ASTOrNode):
+                    or_terms = {repr(tc) for tc in c.children}
+                    flattened_terms = {repr(fc) for fc in flattened if fc is not c}
+                    if or_terms & flattened_terms:
+                        # Only skip if other terms exist, never remove last child
+                        if len(flattened) > 1:
+                            continue
+                result_children.append(c)
+
+            if not result_children:
+                return ASTTrueNode()
+            if len(result_children) == 1:
+                return result_children[0]
+
+            return ASTAndNode(result_children)
+
+        def visit_ASTOrNode(self, node: ASTOrNode) -> ASTNode:
+            children = [self.transform(c) for c in node.children]
+
+            # Flatten nested ORs and remove duplicates
+            flattened = []
+            seen = set()
+            for c in children:
+                if isinstance(c, ASTOrNode):
+                    for gc in c.children:
+                        key = repr(gc)
+                        if key not in seen:
+                            seen.add(key)
+                            flattened.append(gc)
+                else:
+                    key = repr(c)
+                    if key not in seen:
+                        seen.add(key)
+                        flattened.append(c)
+
+            # Constant folding
+            if any(isinstance(c, ASTTrueNode) for c in flattened):
+                return ASTTrueNode()
+            flattened = [c for c in flattened if not isinstance(c, ASTFalseNode)]
+            if not flattened:
+                return ASTFalseNode()
+            if len(flattened) == 1:
+                return flattened[0]
+
+            # Absorption: remove AND children that are redundant
+            result_children = []
+            for c in flattened:
+                if isinstance(c, ASTAndNode):
+                    and_terms = {repr(tc) for tc in c.children}
+                    flattened_terms = {repr(fc) for fc in flattened if fc is not c}
+                    if and_terms & flattened_terms:
+                        # Only skip if other terms exist
+                        if len(flattened) > 1:
+                            continue
+                result_children.append(c)
+
+            if not result_children:
+                return ASTFalseNode()
+            if len(result_children) == 1:
+                return result_children[0]
+
+            return ASTOrNode(result_children)
+
+        def visit_ASTNotNode(self, node: ASTNotNode) -> ASTNode:
+            child = self.transform(node.child)
+            # Double negation elimination
+            if isinstance(child, ASTNotNode):
+                return self.transform(child.child)
+            return ASTNotNode(child)
+
+        def visit_ASTTermNode(self, node: ASTTermNode) -> ASTNode:
+            return node
+
+        def visit_ASTTrueNode(self, node: "ASTTrueNode") -> ASTNode:
+            return node
+
+        def visit_ASTFalseNode(self, node: "ASTFalseNode") -> ASTNode:
+            return node
+
+# TODO: review/retouch (applies to all transformations really)
+
+class RobustSimplifier(Transformer):
+    """
+    Safely simplifies an AST, handling edge cases:
+    - Flatten AND/OR nodes
+    - Remove duplicates
+    - Fold constants
+    - Handle absorption carefully
+    - Replace empty AND/OR with TRUE/FALSE
+    """
+
+    def visit_ASTAndNode(self, node: ASTAndNode) -> ASTNode:
+        children = [self.transform(c) for c in node.children]
+
+        # Flatten nested ANDs and remove duplicates
+        flattened = []
+        seen = set()
+        for c in children:
+            if isinstance(c, ASTAndNode):
+                for gc in c.children:
+                    key = repr(gc)
+                    if key not in seen:
+                        seen.add(key)
+                        flattened.append(gc)
+            else:
+                key = repr(c)
+                if key not in seen:
+                    seen.add(key)
+                    flattened.append(c)
+
+        # Constant folding
+        if any(isinstance(c, ASTFalseNode) for c in flattened):
+            return ASTFalseNode()
+        flattened = [c for c in flattened if not isinstance(c, ASTTrueNode)]
+        if not flattened:
+            return ASTTrueNode()
+        if len(flattened) == 1:
+            return flattened[0]
+
+        # Absorption: remove OR children that are redundant
+        result_children = []
+        for c in flattened:
+            if isinstance(c, ASTOrNode):
+                or_terms = {repr(tc) for tc in c.children}
+                flattened_terms = {repr(fc) for fc in flattened if fc is not c}
+                if or_terms & flattened_terms:
+                    # Only skip if other terms exist, never remove last child
+                    if len(flattened) > 1:
+                        continue
+            result_children.append(c)
+
+        if not result_children:
+            return ASTTrueNode()
+        if len(result_children) == 1:
+            return result_children[0]
+
+        return ASTAndNode(result_children)
+
+    def visit_ASTOrNode(self, node: ASTOrNode) -> ASTNode:
+        children = [self.transform(c) for c in node.children]
+
+        # Flatten nested ORs and remove duplicates
+        flattened = []
+        seen = set()
+        for c in children:
+            if isinstance(c, ASTOrNode):
+                for gc in c.children:
+                    key = repr(gc)
+                    if key not in seen:
+                        seen.add(key)
+                        flattened.append(gc)
+            else:
+                key = repr(c)
+                if key not in seen:
+                    seen.add(key)
+                    flattened.append(c)
+
+        # Constant folding
+        if any(isinstance(c, ASTTrueNode) for c in flattened):
+            return ASTTrueNode()
+        flattened = [c for c in flattened if not isinstance(c, ASTFalseNode)]
+        if not flattened:
+            return ASTFalseNode()
+        if len(flattened) == 1:
+            return flattened[0]
+
+        # Absorption: remove AND children that are redundant
+        result_children = []
+        for c in flattened:
+            if isinstance(c, ASTAndNode):
+                and_terms = {repr(tc) for tc in c.children}
+                flattened_terms = {repr(fc) for fc in flattened if fc is not c}
+                if and_terms & flattened_terms:
+                    # Only skip if other terms exist
+                    if len(flattened) > 1:
+                        continue
+            result_children.append(c)
+
+        if not result_children:
+            return ASTFalseNode()
+        if len(result_children) == 1:
+            return result_children[0]
+
+        return ASTOrNode(result_children)
+
+    def visit_ASTNotNode(self, node: ASTNotNode) -> ASTNode:
+        child = self.transform(node.child)
+        # Double negation elimination
+        if isinstance(child, ASTNotNode):
+            return self.transform(child.child)
+        return ASTNotNode(child)
+
+    def visit_ASTTermNode(self, node: ASTTermNode) -> ASTNode:
+        return node
+
+    def visit_ASTTrueNode(self, node: "ASTTrueNode") -> ASTNode:
+        return node
+
+    def visit_ASTFalseNode(self, node: "ASTFalseNode") -> ASTNode:
+        return node
+
+# TODO: add a evaluation optimizing transformer
+# which will reorder and terms in increasing order of postings list length
+# inverted_index will need to cache posting list lengths, and expose a method to get them
+
+
+class TransformationPipeline:
+    def __init__(self, transformers: list[Transformer]):
+        self.transformers = transformers
+
+    def transform(self, node: ASTNode) -> ASTNode:
+        for transformer in self.transformers:
+            node = transformer.transform(node)
+        return node

@@ -5,24 +5,22 @@ from .ast import AST, ASTNode, ASTAndNode, ASTOrNode, ASTNotNode, ASTTermNode, A
 class Parser(Protocol):
     def parse(self, query: str) -> AST: ...
 
-
-# TODO: check why regex is different from preserve_boolean_operators
-TOKEN_REGEX = compile(r"&&|\|\||!!|\(\(|\)\)|\S+")
-
 # GRAMMAR PARSED:
 # QUERY -> EXPR
 # EXPR -> OR_EXPR
 # OR_EXPR -> AND_EXPR { "||" AND_EXPR }
 # AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR }
 # NOT_EXPR -> "!!" NOT_EXPR | "((" EXPR "))" | ATOM
-# ATOM -> TERM | "true" | "false"
+# ATOM -> TERM | "#true" | "#false"
 class RecursiveDescentParser:
+    TOKEN_REGEX = compile(r"&&|\|\||!!|\(\(|\)\)|#\w+|\S+")
+
     def __init__(self):
         self.tokens: List[str] = []
         self.position: int = 0
 
     def parse(self, query: str) -> AST:
-        self.tokens = TOKEN_REGEX.findall(query)
+        self.tokens = self.TOKEN_REGEX.findall(query)
         self.position = 0
         root = self._parse_expr()
         if root is None:
@@ -79,9 +77,9 @@ class RecursiveDescentParser:
         if term in {"&&", "||", "!!", "((", "))"}:
             return None
         self._advance()
-        if term.lower() == "true":
+        if term.lower() == "#true":
             return ASTTrueNode()
-        elif term.lower() == "false":
+        elif term.lower() == "#false":
             return ASTFalseNode()
         else:
             return ASTTermNode(term)
@@ -106,9 +104,8 @@ class RecursiveDescentParser:
     def _advance(self) -> None:
         self.position += 1
 
-
 def preserve_boolean_operators(preprocessing_pipeline: Callable[[str], list[str]]) -> Callable[[str], str]:
-    operator_regex = compile(r"&&|\|\||!!|\(\(|\)\)")
+    operator_regex = compile(r"&&|\|\||!!|\(\(|\)\)|#\w+")  # tokenizer might split # + true/false
     def wrapper(query_string: str) -> str:
         try:
             substrings = split(operator_regex, query_string)

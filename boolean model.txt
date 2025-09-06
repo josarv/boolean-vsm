@@ -1,0 +1,35 @@
+# boolean model
+
+- query language: AND, OR, NOT, +, -, (, )
+- bnf?
+
+- parsing algorithm?
+
+- algebraic simplification of queries
+
+- index construction
+    - hash, inverted, bloom
+    - bitwise operations, set operations
+
+- lookup
+
+# tldr
+
+parser: query string or list -> ast
+
+## python matters:
+
+- error checking
+- type checking
+- public and private interface, __all__, what is in __init__
+
+```bash
+sudo docker build -t ir .
+sudo docker run -it -v .:/ir ir:latest bash
+```
+
+AST processing:
+- collapse redundant query terms (e.g. "apple && (apple || banana)" -> "apple")
+- cnf -> standard form, each clause corresponds to sets of postings to union/intersect
+- post cnf: remove duplicate literals, subsumed clauses, optimize for query evaluation
+

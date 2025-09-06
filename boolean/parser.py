@@ -1,15 +1,21 @@
-from typing import Protocol, List
-from re import compile
+from typing import Protocol, List, Callable
+from re import compile, split
 from .ast import AST, ASTNode, ASTAndNode, ASTOrNode, ASTNotNode, ASTTermNode, ASTTrueNode, ASTFalseNode
 
 class Parser(Protocol):
     def parse(self, query: str) -> AST: ...
 
-# TODO: add true/false atoms
+
 # TODO: check why regex is different from preserve_boolean_operators
-# TODO: move preserve_boolean_operators here?
 TOKEN_REGEX = compile(r"&&|\|\||!!|\(\(|\)\)|\S+")
 
+# GRAMMAR PARSED:
+# QUERY -> EXPR
+# EXPR -> OR_EXPR
+# OR_EXPR -> AND_EXPR { "||" AND_EXPR }
+# AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR }
+# NOT_EXPR -> "!!" NOT_EXPR | "((" EXPR "))" | ATOM
+# ATOM -> TERM | "true" | "false"
 class RecursiveDescentParser:
     def __init__(self):
         self.tokens: List[str] = []
@@ -65,7 +71,7 @@ class RecursiveDescentParser:
         else:
             return self._parse_term()
 
-    # TERM -> IDENT
+    # TERM -> IDENT | "true" | "false"
     def _parse_term(self) -> ASTNode | None:
         if self._current() is None:
             return None
@@ -73,7 +79,12 @@ class RecursiveDescentParser:
         if term in {"&&", "||", "!!", "((", "))"}:
             return None
         self._advance()
-        return ASTTermNode(term)
+        if term.lower() == "true":
+            return ASTTrueNode()
+        elif term.lower() == "false":
+            return ASTFalseNode()
+        else:
+            return ASTTermNode(term)
 
     # checks and consumes a token if present
     def _accept(self, token: str) -> bool:
@@ -94,3 +105,25 @@ class RecursiveDescentParser:
 
     def _advance(self) -> None:
         self.position += 1
+
+
+def preserve_boolean_operators(preprocessing_pipeline: Callable[[str], list[str]]) -> Callable[[str], str]:
+    operator_regex = compile(r"&&|\|\||!!|\(\(|\)\)")
+    def wrapper(query_string: str) -> str:
+        try:
+            substrings = split(operator_regex, query_string)
+            operators = operator_regex.findall(query_string)
+            processed_substrings = []
+            for i, substring in enumerate(substrings):
+                if substring.strip():
+                    preprocessed_tokens = preprocessing_pipeline(substring)
+                    preprocessed_strings = " ".join(preprocessed_tokens)
+                    processed_substrings.append(preprocessed_strings)
+                if i < len(operators):
+                    processed_substrings.append(operators[i])
+
+            return " ".join(processed_substrings)
+        except Exception as e:
+            print(f"An error occurred during query preprocessing: {e}")
+            return query_string
+    return wrapper

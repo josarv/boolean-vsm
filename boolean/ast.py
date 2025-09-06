@@ -88,11 +88,3 @@ class ASTFalseNode:
         return "FALSE"
 
 # TODO: make proper display functions, maybe methods of AST class?
-def display_ast_preorder(node: ASTNode, indent: int = 0):
-    prefix = "  " * indent
-    print(f"{prefix}{node}")
-    if isinstance(node, ASTAndNode) or isinstance(node, ASTOrNode):
-        for child in node.children:
-            display_ast_preorder(child, indent + 1)
-    elif isinstance(node, ASTNotNode):
-        display_ast_preorder(node.child, indent + 1)

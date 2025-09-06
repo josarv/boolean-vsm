@@ -22,8 +22,8 @@ queries = [
     "!!",  # dangling NOT
 ]
 
-# for query in queries:
-#     print_ast(query, parser)
+for query in queries:
+    print_ast(query, parser)
 
 preprocessing_pipeline = compose(
     # expand_contractions,

@@ -2,6 +2,8 @@ from typing import Protocol, Set, List
 
 from .index import InvertedIndex
 
+# TODO: make proper display functions, maybe methods of AST class?
+
 class AST:
     def __init__(self, query: str, root):
         self.query = query
@@ -15,6 +17,10 @@ class AST:
 # this dictates that the nodes are evaluated via set operations (intersection, union, inversion)
 # this should be later modified to allow for bit vectors to be returned
 # which in turn allow for much faster bitwise operations
+# to do this define a type - protocol, say boolean set, with the operations required
+# __and__, __or__, __sub__, whatever
+# this can be used to wrap sets, bitvectors or otherwise
+# the ASTNode class will only depend on that type
 class ASTNode(Protocol):
     def evaluate(self, inverted_index: "InvertedIndex") -> Set[int]: ...
     def __repr__(self) -> str: ...
@@ -89,5 +95,3 @@ class ASTFalseNode:
 
     def __repr__(self) -> str:
         return "FALSE"
-
-# TODO: make proper display functions, maybe methods of AST class?

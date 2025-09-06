@@ -1,6 +1,8 @@
 from typing import Protocol, Set, Dict, Any
 from collections import defaultdict
 
+# as mentioned in ast.py, change these methods to return a wrapper type
+# which will wrap sets, bit arrays or whatever
 class InvertedIndex(Protocol):
     def postings(self, term: str) -> Set[int]: ...
     def all_documents(self) -> Set[int]: ...

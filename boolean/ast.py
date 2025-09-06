@@ -8,7 +8,8 @@ class AST:
         self.root = root
 
     def __repr__(self):
-        return f"AST({self.query}, {self.root})"
+        # return f"AST({self.query}, {self.root})"
+        return f'{self.root}'
 
 
 class ASTNode(Protocol):

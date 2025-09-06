@@ -1,7 +1,7 @@
 from string import punctuation
 from functools import reduce
 
-from decontract import Contractions
+# from decontract import Contractions
 
 from nltk import download, pos_tag
 from nltk.corpus import stopwords, wordnet
@@ -12,8 +12,8 @@ from nltk.stem import WordNetLemmatizer
 
 print("Initializing contractions...")
 
-contractions = Contractions(api_key="glove-twitter-25")
-contractions.load_models()
+# contractions = Contractions(api_key="glove-twitter-25")
+# contractions.load_models()
 
 print("Initializing nltk...")
 
@@ -28,8 +28,8 @@ PUNCTUATION = set(punctuation)
 def compose(*functions):
     return reduce(lambda f, g: lambda x: g(f(x)), functions, lambda x: x)
 
-def expand_contractions(text):
-    return list(contractions.expand_texts([text], precise=True))[0]
+# def expand_contractions(text):
+#    return list(contractions.expand_texts([text], precise=True))[0]
 
 def tokenize(text):
     return word_tokenize(text)

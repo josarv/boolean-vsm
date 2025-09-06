@@ -69,7 +69,7 @@ class RecursiveDescentParser:
         else:
             return self._parse_term()
 
-    # TERM -> IDENT | "true" | "false"
+    # TERM -> IDENT | "#true" | "#false"
     def _parse_term(self) -> ASTNode | None:
         if self._current() is None:
             return None
@@ -119,7 +119,7 @@ def preserve_boolean_operators(preprocessing_pipeline: Callable[[str], list[str]
                 if i < len(operators):
                     processed_substrings.append(operators[i])
 
-            return " ".join(processed_substrings)
+            return " ".join(filter(None, (s.strip() for s in processed_substrings)))
         except Exception as e:
             print(f"An error occurred during query preprocessing: {e}")
             return query_string

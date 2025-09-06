@@ -11,7 +11,10 @@ class AST:
         # return f"AST({self.query}, {self.root})"
         return f'{self.root}'
 
-
+# built in to the protocol, is that the inverted index returns a set of ids
+# this dictates that the nodes are evaluated via set operations (intersection, union, inversion)
+# this should be later modified to allow for bit vectors to be returned
+# which in turn allow for much faster bitwise operations
 class ASTNode(Protocol):
     def evaluate(self, inverted_index: "InvertedIndex") -> Set[int]: ...
     def __repr__(self) -> str: ...

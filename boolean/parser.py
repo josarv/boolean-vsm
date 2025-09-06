@@ -18,14 +18,16 @@ class RecursiveDescentParser:
     def parse(self, query: str) -> AST:
         self.tokens = TOKEN_REGEX.findall(query)
         self.position = 0
-        root = self._parse_or()
+        root = self._parse_expr()
         if root is None:
             root = ASTFalseNode()  # empty query evaluates to false
         return AST(query, root)
 
+    # EXPR -> OR_EXPR
     def _parse_expr(self) -> ASTNode | None:
         return self._parse_or()
 
+    # EXPR -> AND_EXPR { "||" AND_EXPR }
     def _parse_or(self) -> ASTNode | None:
         node = self._parse_and()
         while self._accept("||"):
@@ -37,6 +39,7 @@ class RecursiveDescentParser:
             node = ASTOrNode([node, right])
         return node
 
+    # AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR }
     def _parse_and(self) -> ASTNode | None:
         node = self._parse_not()
         while self._accept("&&"):
@@ -48,6 +51,7 @@ class RecursiveDescentParser:
             node = ASTAndNode([node, right])
         return node
 
+    # NOT_EXPR -> "!!" NOT_EXPR | "((" EXPR ")) | TERM
     def _parse_not(self) -> ASTNode | None:
         if self._accept("!!"):
             child = self._parse_not()
@@ -61,6 +65,7 @@ class RecursiveDescentParser:
         else:
             return self._parse_term()
 
+    # TERM -> IDENT
     def _parse_term(self) -> ASTNode | None:
         if self._current() is None:
             return None
@@ -70,12 +75,14 @@ class RecursiveDescentParser:
         self._advance()
         return ASTTermNode(term)
 
+    # checks and consumes a token if present
     def _accept(self, token: str) -> bool:
         if self._current() == token:
             self._advance()
             return True
         return False
 
+    # enforces a token must appear, else error
     def _expect(self, token: str) -> None:
         if not self._accept(token):
             raise SyntaxError(f"Expected token '{token}' at position {self.position}, got '{self._current()}'")

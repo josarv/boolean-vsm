@@ -70,7 +70,6 @@ def convert_penn_treebank_to_wordnet_tags(tokens):
 
 def lemmatize(tokens):
     lemmatizer = WordNetLemmatizer()
-    # return list(map(lambda x: lemmatizer.lemmatize(x[0], pos=x[1])), tokens))
     return list(map(lambda x: (lemmatizer.lemmatize(x[0], pos=x[1]), x[1]), tokens))
 
 def get_synonym(word, pos):

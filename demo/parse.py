@@ -28,8 +28,8 @@ for query in queries:
 preprocessing_pipeline = compose(
     # expand_contractions,
     tokenize,
-    lowercase,
-    remove_punctuation_tokens,
+    # lowercase,
+    # remove_punctuation_tokens,
     # remove_digit_tokens,
     # remove_too_short_tokens,
     add_penn_treebank_tags,

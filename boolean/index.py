@@ -12,7 +12,7 @@ class InvertedIndex(Protocol):
     def vocabulary(self) -> Set[str]: ...
     def metadata(self, document_id: int) -> Dict[str, Any] | None: ...
 
-class InMemoryInvertedIndex:
+class SetInvertedIndex:
     def __init__(self):
         self._index: Dict[str, Set[int]] = defaultdict(set)
         self._documents: Set[int] = set()
@@ -36,3 +36,7 @@ class InMemoryInvertedIndex:
 
     def add_document(self, document_id: int, tokens: list[str]) -> None:
         pass
+
+
+class BitVectorInvertedIndex:
+    pass

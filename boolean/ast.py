@@ -3,6 +3,7 @@ from typing import Protocol, Set, List
 from .index import InvertedIndex
 
 # TODO: make proper display functions, maybe methods of AST class?
+# TODO: make ast nodes dataclasses?
 
 class AST:
     def __init__(self, query: str, root):
@@ -70,7 +71,6 @@ class ASTOrNode:
     def __repr__(self) -> str:
         return "OR(" + ", ".join(map(str, self.children)) + ")"
 
-
 class ASTNotNode:
     def __init__(self, child: ASTNode):
         self.child = child
@@ -80,7 +80,6 @@ class ASTNotNode:
 
     def __repr__(self) -> str:
         return f"NOT({self.child})"
-
 
 class ASTTrueNode:
     def evaluate(self, inverted_index: "InvertedIndex") -> Set[int]:

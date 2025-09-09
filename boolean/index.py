@@ -12,6 +12,7 @@ class InvertedIndex(Protocol):
     def empty_postings(self) -> PostingList: ...
     # this one is a factory for the ast to use when it needs an empty posting list
     # because it doesn't know what implementation is used
+    def postings_to_filenames(self, postings: PostingList) -> Iterable[str]: ...
 
 # todo: review the scope of these dataclasses, do they need to be nested?
 @dataclass
@@ -85,3 +86,6 @@ class SimpleInvertedIndex:
             )
             per_term_data.posting_list.add(document_id)
             per_term_data.document_frequency += 1
+
+    def postings_to_filenames(self, postings: PostingList) -> Iterable[str]:
+        return [self._doc_id_to_metadata[doc_id].filename for doc_id in sorted(postings)]

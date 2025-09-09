@@ -1,6 +1,7 @@
 from boolean.parser import RecursiveDescentParser, preserve_boolean_operators
-from project.preprocess import compose, tokenize, add_penn_treebank_tags, convert_penn_treebank_to_wordnet_tags, lemmatize, strip_pos_tags, remove_stopwords
 from boolean.optimization import fold_constants, flatten_nested_operators, deduplicate_operands, simplify_tautologies_contradictions
+# from boolean.utility import compose
+from project.preprocess import tokenize
 
 parser = RecursiveDescentParser()
 

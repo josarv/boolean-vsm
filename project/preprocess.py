@@ -1,5 +1,4 @@
 from string import punctuation
-from functools import reduce
 
 # from decontract import Contractions
 
@@ -24,9 +23,6 @@ download('averaged_perceptron_tagger_eng')
 
 STOPWORDS = set(stopwords.words('english'))
 PUNCTUATION = set(punctuation)
-
-def compose(*functions):
-    return reduce(lambda f, g: lambda x: g(f(x)), functions, lambda x: x)
 
 # def expand_contractions(text):
 #    return list(contractions.expand_texts([text], precise=True))[0]

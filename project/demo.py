@@ -1,24 +1,8 @@
 from boolean.parser import RecursiveDescentParser, preserve_boolean_operators
 from boolean.optimization import fold_constants, flatten_nested_operators, deduplicate_operands, simplify_tautologies_contradictions
-# from boolean.utility import compose
 from project.preprocess import tokenize
 
 parser = RecursiveDescentParser()
-
-# preprocessing_pipeline = compose(
-#     # expand_contractions,
-#     tokenize,
-#     # lowercase,
-#     # remove_punctuation_tokens,
-#     # remove_digit_tokens,
-#     # remove_too_short_tokens,
-#     add_penn_treebank_tags,
-#     convert_penn_treebank_to_wordnet_tags,
-#     lemmatize,
-#     # map_to_synonyms,
-#     strip_pos_tags,
-#     remove_stopwords,
-# )
 
 query_pipeline = preserve_boolean_operators(tokenize)
 

@@ -11,6 +11,7 @@ class PostingList(Protocol):
     def __ior__(self, other) -> "PostingList": ...
     def __sub__(self, other) -> "PostingList": ...
     def __isub__(self, other) -> "PostingList": ...
+    def add(self, item: int) -> None: ...
 
 
 class SetPostingList:
@@ -64,3 +65,6 @@ class SetPostingList:
         else:
             self._set -= set(other)
         return self
+
+    def add(self, item: int) -> None:
+        self._set.add(item)

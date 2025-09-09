@@ -38,12 +38,65 @@ def fold_constants(node: ASTNode) -> ASTNode:
             if isinstance(transformed_child, ASTFalseNode):
                 return ASTTrueNode()
             return ASTNotNode(child=transformed_child)
-        case ASTTrueNode():
-            return node
-        case ASTFalseNode():
-            return node
-        case ASTTermNode():
+        case ASTTrueNode() | ASTFalseNode() | ASTTermNode():
             return node
         case _:
             # fallback, return the node unchanged, or error out
+            return node
+
+def flatten_nested_operators(node: ASTNode) -> ASTNode:
+    match node:
+        case ASTAndNode(children=children):
+            flattened_children = []
+            for child in children:
+                transformed_child = flatten_nested_operators(child)
+                if isinstance(transformed_child, ASTAndNode):
+                    flattened_children.extend(transformed_child.children)
+                else:
+                    flattened_children.append(transformed_child)
+            return ASTAndNode(children=flattened_children)
+        case ASTOrNode(children=children):
+            flattened_children = []
+            for child in children:
+                transformed_child = flatten_nested_operators(child)
+                if isinstance(transformed_child, ASTOrNode):
+                    flattened_children.extend(transformed_child.children)
+                else:
+                    flattened_children.append(transformed_child)
+            return ASTOrNode(children=flattened_children)
+        case ASTNotNode(child=child):
+            return ASTNotNode(child=flatten_nested_operators(child))
+        case ASTTrueNode() | ASTFalseNode() | ASTTermNode():
+            return node
+        case _:
+            return node
+
+
+def deduplicate_operands(node: ASTNode) -> ASTNode:
+    match node:
+        case ASTAndNode(children=children):
+            transformed_children = [deduplicate_operands(child) for child in children]
+            unique_children = []
+            seen = set()
+            for child in transformed_children:
+                repr_child = repr(child)  # we use repr to identify unique nodes, structural equality
+                if repr_child not in seen:
+                    seen.add(repr_child)
+                    unique_children.append(child)
+            return ASTAndNode(children=unique_children)
+        case ASTOrNode(children=children):
+            transformed_children = [deduplicate_operands(child) for child in children]
+            unique_children = []
+            seen = set()
+            for child in transformed_children:
+                repr_child = repr(child)
+                if repr_child not in seen:
+                    seen.add(repr_child)
+                    unique_children.append(child)
+            return ASTOrNode(children=unique_children)
+        case ASTNotNode(child=child):
+            return ASTNotNode(child=deduplicate_operands(child))
+        case ASTTrueNode() | ASTFalseNode() | ASTTermNode():
+            return node
+        case _:
             return node

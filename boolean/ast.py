@@ -1,7 +1,7 @@
 from typing import Protocol, Set, List
 
 from .index import InvertedIndex
-from .postings import PostingsList
+from .postings import PostingList
 
 # TODO: make proper display functions, maybe methods of AST class?
 
@@ -23,14 +23,14 @@ class AST:
 # this can be used to wrap sets, bitvectors or otherwise
 # the ASTNode class will only depend on that type
 class ASTNode(Protocol):
-    def evaluate(self, inverted_index: "InvertedIndex") -> PostingsList: ...
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList: ...
     def __repr__(self) -> str: ...
 
 class ASTTermNode:
     def __init__(self, term: str):
         self.term = term
 
-    def evaluate(self, inverted_index: "InvertedIndex") -> PostingsList:
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
         return inverted_index.postings(self.term)
 
     def __repr__(self) -> str:
@@ -40,7 +40,7 @@ class ASTAndNode:
     def __init__(self, children: List[ASTNode]):
         self.children = children
 
-    def evaluate(self, inverted_index: "InvertedIndex") -> PostingsList:
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
         if not self.children:
             return inverted_index.all_documents() # and identity
         result = self.children[0].evaluate(inverted_index)
@@ -57,7 +57,7 @@ class ASTOrNode:
     def __init__(self, children: List[ASTNode]):
         self.children = children
 
-    def evaluate(self, inverted_index: "InvertedIndex") -> PostingsList:
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
         if not self.children:
             return set()  # or identity
         universe = inverted_index.all_documents()
@@ -75,21 +75,21 @@ class ASTNotNode:
     def __init__(self, child: ASTNode):
         self.child = child
 
-    def evaluate(self, inverted_index: "InvertedIndex") -> PostingsList:
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
         return inverted_index.all_documents() - self.child.evaluate(inverted_index)
 
     def __repr__(self) -> str:
         return f"NOT({self.child})"
 
 class ASTTrueNode:
-    def evaluate(self, inverted_index: "InvertedIndex") -> PostingsList:
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
         return inverted_index.all_documents()
 
     def __repr__(self) -> str:
         return "TRUE"
 
 class ASTFalseNode:
-    def evaluate(self, inverted_index: "InvertedIndex") -> PostingsList:
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
         return set()
 
     def __repr__(self) -> str:

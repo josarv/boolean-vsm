@@ -1,4 +1,4 @@
-from typing import Protocol, Dict, Callable
+from typing import Protocol, Dict, Callable, Iterable
 from .postings import PostingList
 from dataclasses import dataclass
 
@@ -7,7 +7,7 @@ class InvertedIndex(Protocol):
     def term_postings(self, term: str) -> PostingList: ...
     def universe_postings(self) -> PostingList: ...
     def term_document_frequency(self, term: str) -> int: ...
-    def add_document(self, filename: str, tokens: list[str]) -> None: ...
+    def add_document(self, filename: str, tokens: Iterable[str]) -> None: ...
     # def remove_document(self, document_id: int) -> None: ...
     def empty_postings(self) -> PostingList: ...
     # this one is a factory for the ast to use when it needs an empty posting list
@@ -31,20 +31,20 @@ class SimpleInvertedIndex:
         # term string -> PerTermData
         self._index: Dict[str, PerTermData] = {}
         # document_id -> PerDocumentData
-        self.doc_id_to_metadata: Dict[int, PerDocumentData] = {}
+        self._doc_id_to_metadata: Dict[int, PerDocumentData] = {}
         # inverse, file name -> document_id
         # here it'd be a good idea to use bidict, but let's keep it simple
-        self.filename_to_doc_id: Dict[str, int] = {}
-        self.next_doc_id: int = 0  # auto-incrementing document ID
+        self._filename_to_doc_id: Dict[str, int] = {}
+        self._next_doc_id: int = 0  # auto-incrementing document ID
         self._posting_list_factory = posting_list_factory
-        self.all_document_ids: PostingList = posting_list_factory()
+        self._all_document_ids: PostingList = posting_list_factory()
         # usage: index = SimpleInvertedIndex(posting_list_factory=lambda: SetPostingList())
 
     def term_postings(self, term: str) -> PostingList:
         return self._index[term].posting_list if term in self._index else self._posting_list_factory()
 
     def universe_postings(self) -> PostingList:
-        return self.all_document_ids
+        return self._all_document_ids
 
     def term_document_frequency(self, term: str) -> int:
         return self._index[term].document_frequency if term in self._index else 0
@@ -52,37 +52,30 @@ class SimpleInvertedIndex:
     def empty_postings(self) -> PostingList:
         return self._posting_list_factory()
 
-    def add_document(self, filename: str, tokens: list[str]) -> None:
+    def add_document(self, filename: str, tokens: Iterable[str]) -> None:
         # check for duplicates
-        if filename in self.filename_to_doc_id:
+        if filename in self._filename_to_doc_id:
             raise ValueError(f"Document with filename '{filename}' already exists in the index.")
 
         # assign new document ID
-        document_id = self.next_doc_id
-        self.next_doc_id += 1
-        self.filename_to_doc_id[filename] = document_id
+        document_id = self._next_doc_id
+        self._next_doc_id += 1
+        self._filename_to_doc_id[filename] = document_id
 
         # store document metadata
-        self.doc_id_to_metadata[document_id] = PerDocumentData(filename=filename, length=len(tokens))
+        self._doc_id_to_metadata[document_id] = PerDocumentData(filename=filename, length=len(tokens))
 
         # add to universe postings
-        self.all_document_ids.add(document_id)
+        self._all_document_ids.add(document_id)
 
         # count term frequencies in the document
-        term_frequencies: Dict[str, int] = {}
-        for token in tokens:
-            term_frequencies[token] = term_frequencies.get(token, 0) + 1
+        # not used in boolean
+        # term_frequencies: Dict[str, int] = {}
+        # for token in tokens:
+        #     term_frequencies[token] = term_frequencies.get(token, 0) + 1
 
         # update index with term frequencies
         for term in set(tokens):  # if we used term_frequencies, it'd be term_frequencies.keys()
-            # if term in self.index:
-            #     per_term_data = self.index[term]
-            #     per_term_data.posting_list.add(document_id)
-            #     per_term_data.document_frequency += 1
-            # else:
-            #     posting_list = self._posting_list_factory()
-            #     posting_list.add(document_id)
-            #     self.index[term] = PerTermData(posting_list=posting_list, document_frequency=1)
             per_term_data = self._index.setdefault(
                 term,
                 PerTermData(

@@ -74,8 +74,9 @@ def flatten_nested_operators(node: ASTNode) -> ASTNode:
 
 def deduplicate_operands(node: ASTNode) -> ASTNode:
     match node:
-        case ASTAndNode(children=children):
-            transformed_children = [deduplicate_operands(child) for child in children]
+        case ASTAndNode() | ASTOrNode() as current_node:
+            NodeType = type(current_node)
+            transformed_children = [deduplicate_operands(child) for child in current_node.children]
             unique_children = []
             seen = set()
             for child in transformed_children:
@@ -83,19 +84,40 @@ def deduplicate_operands(node: ASTNode) -> ASTNode:
                 if repr_child not in seen:
                     seen.add(repr_child)
                     unique_children.append(child)
-            return ASTAndNode(children=unique_children)
-        case ASTOrNode(children=children):
-            transformed_children = [deduplicate_operands(child) for child in children]
-            unique_children = []
-            seen = set()
-            for child in transformed_children:
-                repr_child = repr(child)
-                if repr_child not in seen:
-                    seen.add(repr_child)
-                    unique_children.append(child)
-            return ASTOrNode(children=unique_children)
+            if not unique_children:
+                return ASTTrueNode() if isinstance(current_node, ASTAndNode) else ASTFalseNode()  # identity
+            elif len(unique_children) == 1:
+                return unique_children[0]  # collapse single-child AND/OR
+            else:
+                return NodeType(children=unique_children)
         case ASTNotNode(child=child):
             return ASTNotNode(child=deduplicate_operands(child))
+        case ASTTrueNode() | ASTFalseNode() | ASTTermNode():
+            return node
+        case _:
+            return node
+
+def simplify_tautologies_contradictions(node: ASTNode) -> ASTNode:
+    match node:
+        case ASTAndNode() | ASTOrNode() as current_node:
+            NodeType = type(current_node)
+            transformed_children = [simplify_tautologies_contradictions(child) for child in current_node.children]
+            # collapse empty or singleton children
+            if not transformed_children:
+                return ASTTrueNode() if isinstance(current_node, ASTAndNode) else ASTFalseNode()  # identity
+            elif len(transformed_children) == 1:
+                return transformed_children[0]
+            # detect contradictions/tautologies
+            child_reprs = {repr(child): child for child in transformed_children}  # once again, using repr for structural equality
+            for child in transformed_children:
+                if isinstance(child, ASTNotNode) and repr(child.child) in child_reprs:
+                    # found a pair: x and !! x
+                    return ASTFalseNode() if isinstance(child, ASTAndNode) else ASTTrueNode()
+                    # if operand is and: a && !!a = false
+                    # if operand is or: a || !!a = true
+            return NodeType(children=transformed_children)
+        case ASTNotNode(child=child):
+            return ASTNotNode(child=simplify_tautologies_contradictions(child))
         case ASTTrueNode() | ASTFalseNode() | ASTTermNode():
             return node
         case _:

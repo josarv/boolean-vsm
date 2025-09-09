@@ -13,7 +13,7 @@ class Parser(Protocol):
 # NOT_EXPR -> "!!" NOT_EXPR | "((" EXPR "))" | ATOM
 # ATOM -> TERM | "#true" | "#false"
 class RecursiveDescentParser:
-    TOKEN_REGEX = compile(r"&&|\|\||!!|\(\(|\)\)|#\w+|\S+")
+    TOKEN_REGEX = compile(r"&&|\|\||!!|\(\(|\)\)|#\w+|\w+")
 
     def __init__(self):
         self.tokens: List[str] = []
@@ -74,6 +74,11 @@ class RecursiveDescentParser:
             return ASTNotNode(child)
         elif self._accept("(("):
             node = self._parse_expr()
+            # here we're kind of fucked, as we don't know which is the identity
+            # term && (( )) -> term && true, but term || (( )) -> term || false
+            # maybe introduce a special ASTIdentityNode?
+            if node is None:
+                return ASTTrueNode()
             self._expect("))")
             return node
         else:
@@ -81,10 +86,8 @@ class RecursiveDescentParser:
 
     # TERM -> IDENT | "#true" | "#false"
     def _parse_term(self) -> ASTNode | None:
-        if self._current() is None:
-            return None
         term = self._current()
-        if term in {"&&", "||", "!!", "((", "))"}:
+        if term is None or term in {"&&", "||", "!!", "((", "))"}:
             return None
         self._advance()
         if term.lower() == "#true":
@@ -118,6 +121,8 @@ def preserve_boolean_operators(preprocessing_pipeline: Callable[[str], list[str]
     operator_regex = compile(r"&&|\|\||!!|\(\(|\)\)|#\w+")  # tokenizer might split # + true/false
     def wrapper(query_string: str) -> str:
         try:
+            # add spaces around double parentheses to ensure they are treated as separate tokens
+            # query_string = query_string.replace('((', ' (( ').replace('))', ' )) ')
             substrings = split(operator_regex, query_string)
             operators = operator_regex.findall(query_string)
             processed_substrings = []

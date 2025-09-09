@@ -33,10 +33,10 @@ queries = [
     ("!!#true", "#false"),
     ("!!!!#false", "#false"),
     ("#true && #false", "#false"),
-    ("!!(d || #true)", "#true"),
+    ("!!!!((d || #true))", "#true"),
 
     # Flattening nested operators
-    ("(a && (b && c))", "(a && b && c)"),
+    ("((a && ((b && c))))", "a && b && c"),
     ("(x || (y || z))", "(x || y || z)"),
     ("(p && (q && (r && s)))", "(p && q && r && s)"),
     ("!!(a && (b && c))", "!!(a && b && c)"),

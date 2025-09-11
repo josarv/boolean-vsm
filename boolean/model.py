@@ -58,3 +58,8 @@
 #     def __repr__(self):
 #         return f"<BooleanIRModel: {len(self.index)} documents>"
 #
+
+class BooleanIrModel:
+    pass
+
+# init, index_document, query

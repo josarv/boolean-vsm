@@ -112,7 +112,7 @@ def simplify_tautologies_contradictions(node: ASTNode) -> ASTNode:
             for child in transformed_children:
                 if isinstance(child, ASTNotNode) and repr(child.child) in child_reprs:
                     # found a pair: x and !! x
-                    return ASTFalseNode() if isinstance(child, ASTAndNode) else ASTTrueNode()
+                    return ASTFalseNode() if isinstance(current_node, ASTAndNode) else ASTTrueNode()
                     # if operand is and: a && !!a = false
                     # if operand is or: a || !!a = true
             return NodeType(children=transformed_children)

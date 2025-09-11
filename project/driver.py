@@ -23,4 +23,7 @@ for filepath in glob(path.join(document_directory, "*")):
             filename = path.basename(filepath)
             boolean.index_document(filename, content)
 
-print(boolean.pretty_query(''.join(" || " if char.isspace() else char for char in "pseudomonas aeruginosa")))
+def add_or_between_terms(query: str) -> str:
+    return ''.join(" || " if char.isspace() else char for char in query)
+
+print(boolean.pretty_query(add_or_between_terms("pseudomonas aeruginosa")))

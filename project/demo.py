@@ -24,7 +24,6 @@ def display_query_processing(query_string: str):
 
 
 queries = [
-    ("(( a && !!a ))", "#false"),
     # Original -> after all passes
     ("#true && a", "a"),
     ("#false || b", "b"),

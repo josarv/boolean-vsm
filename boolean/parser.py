@@ -9,7 +9,7 @@ class Parser(Protocol):
 # QUERY -> EXPR
 # EXPR -> OR_EXPR
 # OR_EXPR -> AND_EXPR { "||" AND_EXPR }
-# AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR }
+# AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR | NOT_EXPR }
 # NOT_EXPR -> "!!" NOT_EXPR | "((" EXPR "))" | ATOM
 # ATOM -> TERM | "#true" | "#false"
 class RecursiveDescentParser:
@@ -48,21 +48,45 @@ class RecursiveDescentParser:
             children.append(next_node)
         return ASTOrNode(children)
 
-    # AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR }
+    # AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR | NOT_EXPR }
     def _parse_and(self) -> ASTNode | None:
+        # # parse first operand
+        # node = self._parse_not()
+        # # if there's no "&&" after it, return it directly
+        # if not self._current() == "&&":
+        #     return node
+        # # if there is, parse all operands into a list
+        # children = [node] if node else [ASTTrueNode()]  # handle dangling operator
+        # # loop to parse all subsequent operands
+        # while self._accept("&&"):
+        #     next_node = self._parse_not()
+        #     if next_node is None:
+        #         next_node = ASTTrueNode()  # handle dangling operator
+        #     children.append(next_node)
+        # return ASTAndNode(children)
         # parse first operand
         node = self._parse_not()
-        # if there's no "&&" after it, return it directly
-        if not self._current() == "&&":
-            return node
-        # if there is, parse all operands into a list
-        children = [node] if node else [ASTTrueNode()]  # handle dangling operator
+        if node is None:
+            node = ASTTrueNode()  # handle dangling start
+        children = [node]
         # loop to parse all subsequent operands
-        while self._accept("&&"):
-            next_node = self._parse_not()
-            if next_node is None:
-                next_node = ASTTrueNode()  # handle dangling operator
-            children.append(next_node)
+        while True:
+            # check for explicit "&&"
+            if self._accept("&&"):
+                next_node = self._parse_not()
+                if next_node is None:
+                    next_node = ASTTrueNode()  # handle dangling operator
+                children.append(next_node)
+            # check for implicit AND (no operator, just juxtaposition)
+            elif self._current() and self._current() not in {"||", "))"}:
+                next_node = self._parse_not()
+                if next_node is None:
+                    next_node = ASTTrueNode()
+                children.append(next_node)
+            else:
+                break
+        if len(children) == 1:
+            return children[0]
         return ASTAndNode(children)
 
     # NOT_EXPR -> "!!" NOT_EXPR | "((" EXPR ")) | TERM

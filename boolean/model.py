@@ -3,7 +3,7 @@ from typing import Callable, List
 from .ast import ASTNode
 from .postings import SetPostingList
 from .index import InvertedIndex, SimpleInvertedIndex
-from .parser import Parser, RecursiveDescentParser
+from .parser import Parser, RecursiveDescentParser, preserve_boolean_operators
 from .optimization import fold_constants, flatten_nested_operators, deduplicate_operands, simplify_tautologies_contradictions
 from .utility import compose
 
@@ -16,6 +16,7 @@ class BooleanIRModel:
             index: InvertedIndex | None = None,
     ):
         self.preprocessing_pipeline = preprocessing_pipeline
+        self.query_pipeline: Callable[[str], str] = preserve_boolean_operators(preprocessing_pipeline)
         self.parser = parser or RecursiveDescentParser()
         self.ast_pipeline: Callable[[ASTNode], ASTNode] = compose(
             fold_constants,
@@ -31,9 +32,9 @@ class BooleanIRModel:
 
     def query(self, query_string: str) -> List[str]:
         # preprocess query
-        processed_query = self.preprocessing_pipeline(query_string)
+        processed_query = self.query_pipeline(query_string)
         # parse into AST
-        ast = self.parser.parse(" ".join(processed_query))
+        ast = self.parser.parse(processed_query)
         # optimize AST
         ast.root = self.ast_pipeline(ast.root)
         # evaluate AST against the index

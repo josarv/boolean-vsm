@@ -31,13 +31,17 @@ class BooleanIRModel:
         self.index.add_document(filename, tokens)
 
     def query(self, query_string: str) -> List[str]:
-        # preprocess query
         processed_query = self.query_pipeline(query_string)
-        # parse into AST
         ast = self.parser.parse(processed_query)
-        # optimize AST
         ast.root = self.ast_pipeline(ast.root)
-        # evaluate AST against the index
         result_postings = ast.root.evaluate(self.index)
-        # convert postings to filenames
         return list(self.index.postings_to_filenames(result_postings))
+
+    def pretty_query(self, query_string: str) -> str:
+        results = self.query(query_string)
+        if not results:
+            return f"No results found for query: '{query_string}'"
+        pretty_result = f"Results for query: '{query_string}':\n"
+        for idx, filename in enumerate(results, start=1):
+            pretty_result += f"  {idx}. {filename}\n"
+        return pretty_result

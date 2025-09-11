@@ -63,8 +63,10 @@ class SimpleInvertedIndex:
         self._next_doc_id += 1
         self._filename_to_doc_id[filename] = document_id
 
+        tokens = list(tokens)
+
         # store document metadata
-        self._doc_id_to_metadata[document_id] = PerDocumentData(filename=filename, length=len(list(tokens)))
+        self._doc_id_to_metadata[document_id] = PerDocumentData(filename=filename, length=len(tokens))
 
         # add to universe postings
         self._all_document_ids.add(document_id)

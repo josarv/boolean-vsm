@@ -12,7 +12,7 @@ preprocess = compose(
 
 boolean = BooleanIRModel(preprocessing_pipeline=preprocess)
 
-document_directory = "data/documents"
+document_directory = "../data/documents"
 
 # glob files in the directory and index them
 for filepath in glob(path.join(document_directory, "*")):
@@ -21,6 +21,5 @@ for filepath in glob(path.join(document_directory, "*")):
             content = file.read()
             filename = path.basename(filepath)
             boolean.index_document(filename, content)
-        print(f"Indexed document: {filename}")
 
-print(boolean.query("pseudomonas"))
+print(boolean.pretty_query(""))

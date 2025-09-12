@@ -1,4 +1,4 @@
-from preprocess import (
+from project.preprocess import (
     tokenize,
     lowercase,
     remove_stopwords,
@@ -66,6 +66,7 @@ print(f"Query time (boolean/wall): {elapsed:.3f}s, {(elapsed / 20):.3f}s avg")
 
 # vsm
 
+start = time()
 collection = {}
 for filepath in glob(path.join(document_directory, "*")):
     if path.isfile(filepath):
@@ -74,7 +75,6 @@ for filepath in glob(path.join(document_directory, "*")):
             filename = path.basename(filepath)
             tokens = preprocess(content)
             collection[filename] = tokens
-start = time()
 vsm.index_collection(collection)
 elapsed = time() - start
 print(f"Indexing time (vsm/wall): {elapsed:.3f}s, {(elapsed / 1200):.3f}s avg")

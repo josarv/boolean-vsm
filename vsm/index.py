@@ -9,8 +9,11 @@ class InvertedIndex(Protocol):
     def term_postings(self, term: str) -> PostingList: ...
     def term_document_frequency(self, term: str) -> int: ...
     # def document_vector(self, filename: str) -> dict[str, float]: ...
-    def document_norm(self, filename: str) -> float: ...
+    def document_norm(self, document_id: int) -> float: ...
     def postings_to_filenames(self, postings: PostingList) -> Iterable[str]: ...
+    def document_count(self) -> int: ...
+    def filename_to_doc_id(self, filename: str) -> int: ...
+    def document_id_to_filename(self, doc_id: int) -> str: ...
 
 
 class SimpleInvertedIndex:
@@ -75,12 +78,28 @@ class SimpleInvertedIndex:
     #             vector[term] = weight
     #     return vector
 
-    def document_norm(self, filename: str) -> float:
-        doc_id = self._filename_to_doc_id.get(filename)
-        if doc_id is None:
-            raise ValueError(f"Document with filename '{filename}' not found in the index.")
-        return self._document_norms[doc_id]
+    def document_norm(self, document_id: int) -> float:
+        norm = self._document_norms.get(document_id)
+        if norm is None:
+            raise ValueError(f"Document ID '{document_id}' not found in the index.")
+        return norm
 
     def postings_to_filenames(self, postings: PostingList) -> Iterable[str]:
         for doc_id, _ in postings:
             yield self._doc_id_to_filename[doc_id]
+
+    def document_count(self) -> int:
+        return len(self._doc_id_to_filename)
+
+
+    def filename_to_doc_id(self, filename: str) -> int:
+        doc_id = self._filename_to_doc_id.get(filename)
+        if doc_id is None:
+            raise ValueError(f"Document with filename '{filename}' not found in the index.")
+        return doc_id
+
+    def document_id_to_filename(self, doc_id: int) -> str:
+        filename = self._doc_id_to_filename.get(doc_id)
+        if filename is None:
+            raise ValueError(f"Document with doc_id '{doc_id}' not found in the index.")
+        return filename

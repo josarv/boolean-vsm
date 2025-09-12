@@ -10,3 +10,4 @@ class VSM:
         # compute query vector
         # compute cosine similarities
         # return ranked list of (filename, score) using self.index.postings_to_filenames
+        # filter top k results

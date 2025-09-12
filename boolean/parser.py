@@ -66,25 +66,26 @@ class RecursiveDescentParser:
         # return ASTAndNode(children)
         # parse first operand
         node = self._parse_not()
-        if node is None:
-            node = ASTTrueNode()  # handle dangling start
-        children = [node]
+        children = [node] if node is not None else []
         # loop to parse all subsequent operands
         while True:
             # check for explicit "&&"
             if self._accept("&&"):
                 next_node = self._parse_not()
                 if next_node is None:
-                    next_node = ASTTrueNode()  # handle dangling operator
+                    next_node = ASTTrueNode()
                 children.append(next_node)
+                # if next_node is not None:
+                #     children.append(next_node)
             # check for implicit AND (no operator, just juxtaposition)
             elif self._current() and self._current() not in {"||", "))"}:
                 next_node = self._parse_not()
-                if next_node is None:
-                    next_node = ASTTrueNode()
-                children.append(next_node)
+                if next_node is not None:
+                    children.append(next_node)
             else:
                 break
+        if not children:
+            return None
         if len(children) == 1:
             return children[0]
         return ASTAndNode(children)
@@ -100,7 +101,7 @@ class RecursiveDescentParser:
             node = self._parse_expr()
             # here we're kind of fucked, as we don't know which is the identity
             # term && (( )) -> term && true, but term || (( )) -> term || false
-            # maybe introduce a special ASTIdentityNode?
+            # should introduce context dependent astidentitynode
             if node is None:
                 return ASTTrueNode()
             self._expect("))")

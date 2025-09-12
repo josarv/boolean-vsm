@@ -1,15 +1,16 @@
-from project.preprocess import tokenize, remove_stopwords
+from project.preprocess import tokenize, lowercase, remove_stopwords
 from boolean.utility import compose
 from boolean.model import BooleanIRModel
 from vsm.model import VSM
 
 from glob import glob
 from os import path
-
+from collections import defaultdict
 
 preprocess = compose(
     tokenize,
-    remove_stopwords
+    lowercase,
+    remove_stopwords,
 )
 
 boolean = BooleanIRModel(preprocessing_pipeline=preprocess)
@@ -18,7 +19,8 @@ vsm = VSM(preprocessing_pipeline=preprocess)
 document_directory = "../data/documents"
 
 def add_or_between_terms(query: str) -> str:
-    return ''.join(" || " if char.isspace() else char for char in query)
+    return query.replace(" ", "||")
+    # return ''.join("||" if char.isspace() else char for char in query)
 
 # boolean
 
@@ -39,30 +41,73 @@ with open("../data/queries.txt", "r") as file:
             boolean_results[query] = results
 
 # for query in boolean_results:
-#     print(f"Boolean results for query '{query}': {boolean_results[query]}")
+#     print(f"Boolean results for query '{query}': {len(boolean_results[query])}")
+
 
 # vsm
 
-collection = {}
-for filepath in glob(path.join(document_directory, "*")):
-    if path.isfile(filepath):
-        with open(filepath, "r") as file:
-            content = file.read()
-            filename = path.basename(filepath)
-            tokens = preprocess(content)
-            collection[filename] = tokens
-vsm.index_collection(collection)
+# collection = {}
+# for filepath in glob(path.join(document_directory, "*")):
+#     if path.isfile(filepath):
+#         with open(filepath, "r") as file:
+#             content = file.read()
+#             filename = path.basename(filepath)
+#             tokens = preprocess(content)
+#             collection[filename] = tokens
+# vsm.index_collection(collection)
+#
+# vsm_results = {}
+# with open("../data/queries.txt", "r") as file:
+#     for line in file:
+#         query = line.strip()
+#         if query:
+#             results = vsm.query(query, top_k=10)
+#             vsm_results[query] = results
+#
+# # for query, result in vsm_results.items():
+# #     result = [document for document, score in result]
+# #     print(result)
+# #     # print(f"VSM results for query '{query}': {result}")
 
-vsm_results = {}
-with open("../data/queries.txt", "r") as file:
-    for line in file:
-        query = line.strip()
-        if query:
-            results = vsm.query(query, top_k=10)
-            vsm_results[query] = results
+ground_truth = defaultdict(set)
+with open("../data/relevant.txt", "r") as file:
+    for query_no, line in enumerate(file):
+        ids = line.strip().split()
+        padded_ids = {doc_id.zfill(4) for doc_id in ids}
+        ground_truth[query_no] = padded_ids
 
-# for query, result in vsm_results.items():
-#     result = [document for document, score in result]
-#     print(result)
-#     # print(f"VSM results for query '{query}': {result}")
+def precision(retrieved: list[str], relevant: set[str]) -> float:
+    if not retrieved:
+        return 0.0
+    return len(set(retrieved) & relevant) / len(retrieved)
 
+def recall(retrieved: list[str], relevant: set[str]) -> float:
+    if not relevant:
+        return 0.0
+    return len(set(retrieved) & relevant) / len(relevant)
+
+# evaluate boolean
+boolean_scores = []
+for idx, query in enumerate(boolean_results):
+    retrieved = boolean_results[query]
+    relevant = ground_truth[idx]
+    p = precision(retrieved, relevant)
+    r = recall(retrieved, relevant)
+    boolean_scores.append((query, p, r))
+
+for query, p, r in boolean_scores:
+    # print(f"Query: {query} | Precision: {p:.3f}, Recall: {r:.3f}")
+    print(f"Precision: {p:.3f}, Recall: {r:.3f}")
+#
+# # evaluate vsm
+# vsm_scores = []
+# for idx, query in enumerate(vsm_results):
+#     retrieved = vsm_results[query]
+#     relevant = ground_truth[idx]
+#     p = precision(retrieved, relevant)
+#     r = recall(retrieved, relevant)
+#     vsm_scores.append((query, p, r))
+#
+# # for query, p, r in vsm_scores:
+# #     # print(f"Query: {query} | Precision: {p:.3f}, Recall: {r:.3f}")
+# #     print(f"Precision: {p:.3f}, Recall: {r:.3f}")

@@ -1,4 +1,4 @@
-from project.preprocess import (
+from preprocess import (
     tokenize,
     lowercase,
     remove_stopwords,
@@ -15,6 +15,7 @@ from vsm.model import VSM
 from glob import glob
 from os import path
 from collections import defaultdict
+from time import time
 
 preprocess = compose(
     tokenize,
@@ -39,13 +40,17 @@ def add_or_between_terms(query: str) -> str:
 # boolean
 
 # glob files in the directory and index them
+start = time()
 for filepath in glob(path.join(document_directory, "*")):
     if path.isfile(filepath):
         with open(filepath, "r") as file:
             content = file.read()
             filename = path.basename(filepath)
             boolean.index_document(filename, content)
+elapsed = time() - start
+print(f"Indexing time (boolean/wall): {elapsed:.3f}s, {(elapsed / 1200):.3f}s avg")
 
+start = time()
 boolean_results = {}
 with open("../data/queries.txt", "r") as file:
     for line in file:
@@ -53,10 +58,11 @@ with open("../data/queries.txt", "r") as file:
         if query:
             results = boolean.query(add_or_between_terms(query))
             boolean_results[query] = results
+elapsed = time() - start
+print(f"Query time (boolean/wall): {elapsed:.3f}s, {(elapsed / 20):.3f}s avg")
 
 # for query in boolean_results:
 #     print(f"Boolean results for query '{query}': {len(boolean_results[query])}")
-
 
 # vsm
 
@@ -68,8 +74,12 @@ for filepath in glob(path.join(document_directory, "*")):
             filename = path.basename(filepath)
             tokens = preprocess(content)
             collection[filename] = tokens
+start = time()
 vsm.index_collection(collection)
+elapsed = time() - start
+print(f"Indexing time (vsm/wall): {elapsed:.3f}s, {(elapsed / 1200):.3f}s avg")
 
+start = time()
 vsm_results = {}
 with open("../data/queries.txt", "r") as file:
     for line in file:
@@ -77,6 +87,8 @@ with open("../data/queries.txt", "r") as file:
         if query:
             results = vsm.query(query, top_k=100)
             vsm_results[query] = results
+elapsed = time() - start
+print(f"Query time (vsm/wall): {elapsed:.3f}s, {(elapsed / 20):.3f}s avg")
 
 # for query, result in vsm_results.items():
 #     result = [document for document, score in result]

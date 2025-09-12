@@ -4,5 +4,12 @@ sudo docker build -t ir .
 sudo docker run -it -v .:/ir ir:latest bash
 ```
 
- - write optimization of reordering ast nodes
- - short circuit evaluation?
+- add f1 score
+- add score threshold in query
+- add astidentity node
+- add reorder optimization
+- add evaluation short circuit
+
+- add timer
+- make chatbot
+- clean up code

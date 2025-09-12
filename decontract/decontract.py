@@ -70,7 +70,7 @@ class Contractions(object):
                 text = hyp[0][0]
                 if scores:
                     intermediates.append(hyp)
-        return (text, intermediates)
+        return text, intermediates
 
     def _expand_text_precise(self, text, scores=False):
         """Expand contractions in text using a much slower but more precise method."""
@@ -101,7 +101,7 @@ class Contractions(object):
                 text = hyp[0][0]
                 if scores:
                     intermediates.append(hyp)
-        return (text, intermediates)
+        return text, intermediates
 
     def expand_texts(self, texts, precise=False, scores=False):
         """Return a generator over an iterable of text where each result has common contractions expanded.

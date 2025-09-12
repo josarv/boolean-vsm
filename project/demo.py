@@ -22,7 +22,6 @@ def display_query_processing(query_string: str):
     print("7. Simplified AST:", ast)
     print("-" * 50)
 
-
 queries = [
     # Original -> after all passes
     ("#true && a", "a"),
@@ -37,37 +36,37 @@ queries = [
 
     # Flattening nested operators
     ("((a && ((b && c))))", "a && b && c"),
-    ("(x || (y || z))", "(x || y || z)"),
-    ("(p && (q && (r && s)))", "(p && q && r && s)"),
-    ("!!(a && (b && c))", "!!(a && b && c)"),
-    ("(m || (n || (o || p)))", "(m || n || o || p)"),
+    ("((x || ((y || z))))", "(x || y || z)"),
+    ("((p && ((q && ((r && s))))))", "(p && q && r && s)"),
+    ("!!((a && ((b && c))))", "!!(a && b && c)"),
+    ("((m || ((n || ((o || p))))))", "(m || n || o || p)"),
 
     # Deduplication
-    ("(a && a)", "a"),
-    ("(b || b || c)", "(b || c)"),
-    ("(x && y && x)", "(x && y)"),
-    ("(p || q || q || p)", "(p || q)"),
-    ("(a && b && a && c)", "(a && b && c)"),
+    ("((a && a))", "a"),
+    ("((b || b || c))", "(b || c)"),
+    ("((x && y && x))", "(x && y)"),
+    ("((p || q || q || p))", "(p || q)"),
+    ("((a && b && a && c))", "(a && b && c)"),
 
     # Tautologies / contradictions
-    ("(a && !a)", "#false"),
-    ("(b || !b)", "#true"),
-    ("(x && y && !y)", "#false"),
-    ("(p || q || !q)", "#true"),
-    ("(m && n && !m)", "#false"),
-    ("(r || s || !r)", "#true"),
-    ("(a && b && !c)", "(a && b && !c)"),
-    ("(x || y || !z)", "(x || y || !z)"),
+    ("((a && !!a))", "#false"),
+    ("((b || !!b))", "#true"),
+    ("((x && y && !!y))", "#false"),
+    ("((p || q || !!q))", "#true"),
+    ("((m && n && !!m))", "#false"),
+    ("((r || s || !!r))", "#true"),
+    ("((a && b && !!c))", "(a && b && !c)"),
+    ("((x || y || !!z))", "(x || y || !z)"),
 
     # Combined transformations
-    ("#true && (a && #true)", "a"),
-    ("(b || #false || b)", "b"),
-    ("(c && (d && #false))", "#false"),
-    ("(x || (y || #true))", "#true"),
-    ("(p && !!p)", "p"),
-    ("(q || !q || r)", "#true"),
-    ("(a && !a && b)", "#false"),
-    ("(m || n || !n)", "#true"),
+    ("#true && ((a && #true))", "a"),
+    ("((b || #false || b))", "b"),
+    ("((c && ((d && #false))))", "#false"),
+    ("((x || ((y || #true))))", "#true"),
+    ("((p && !!p))", "#false"),
+    ("((q || !!q || r))", "#true"),
+    ("((a && !!a && b))", "#false"),
+    ("((m || n || !!n))", "#true"),
 ]
 
 for query, expected in queries:

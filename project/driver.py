@@ -73,7 +73,7 @@ ground_truth = defaultdict(set)
 with open("../data/relevant.txt", "r") as file:
     for query_no, line in enumerate(file):
         ids = line.strip().split()
-        padded_ids = {doc_id.zfill(4) for doc_id in ids}
+        padded_ids = {doc_id.zfill(5) for doc_id in ids}
         ground_truth[query_no] = padded_ids
 
 def precision(retrieved: list[str], relevant: set[str]) -> float:
@@ -95,9 +95,9 @@ for idx, query in enumerate(boolean_results):
     r = recall(retrieved, relevant)
     boolean_scores.append((query, p, r))
 
-for query, p, r in boolean_scores:
-    # print(f"Query: {query} | Precision: {p:.3f}, Recall: {r:.3f}")
-    print(f"Precision: {p:.3f}, Recall: {r:.3f}")
+# for query, p, r in boolean_scores:
+#     # print(f"Query: {query} | Precision: {p:.3f}, Recall: {r:.3f}")
+#     print(f"Precision: {p:.3f}, Recall: {r:.3f}")
 #
 # # evaluate vsm
 # vsm_scores = []

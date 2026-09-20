@@ -1,5 +1,11 @@
 from boolean.parser import RecursiveDescentParser, preserve_boolean_operators
-from boolean.optimization import fold_constants, flatten_nested_operators, deduplicate_operands, simplify_tautologies_contradictions
+from boolean.optimization import (
+    fold_constants,
+    flatten_nested_operators,
+    deduplicate_operands,
+    simplify_tautologies_contradictions,
+    optimize,
+)
 from project.preprocess import tokenize
 
 parser = RecursiveDescentParser()
@@ -20,6 +26,10 @@ def display_query_processing(query_string: str):
     print("6. Deduplicated AST:", ast)
     ast.root = simplify_tautologies_contradictions(ast.root)
     print("7. Simplified AST:", ast)
+    # the passes above run once each; optimize repeats them until the tree
+    # settles, which is what the model actually uses
+    ast.root = optimize(ast.root)
+    print("8. Fully optimized AST:", ast)
     print("-" * 50)
 
 queries = [
@@ -67,6 +77,12 @@ queries = [
     ("((q || !!q || r))", "#true"),
     ("((a && !!a && b))", "#false"),
     ("((m || n || !!n))", "#true"),
+
+    # only reducible by repeating the passes (see optimize)
+    ("a && ((b || !!b))", "a"),
+    ("a || ((b && !!b))", "a"),
+    ("a || (( ))", "a"),
+    ("a && (( )) && b", "(a && b)"),
 ]
 
 for query, expected in queries:

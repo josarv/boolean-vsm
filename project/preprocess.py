@@ -1,18 +1,11 @@
 from string import punctuation
 
-# from decontract import Contractions
-
 from nltk import download, pos_tag
 from nltk.corpus import stopwords, wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 
-# decontract and nltk initialization
-
-print("Initializing contractions...")
-
-# contractions = Contractions(api_key="glove-twitter-25")
-# contractions.load_models()
+# nltk initialization
 
 print("Initializing nltk...")
 
@@ -23,9 +16,6 @@ download('averaged_perceptron_tagger_eng')
 
 STOPWORDS = set(stopwords.words('english'))
 PUNCTUATION = set(punctuation)
-
-# def expand_contractions(text):
-#    return list(contractions.expand_texts([text], precise=True))[0]
 
 def tokenize(text):
     return word_tokenize(text)

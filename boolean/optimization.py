@@ -1,5 +1,30 @@
 from .ast import ASTNode, ASTAndNode, ASTTrueNode, ASTOrNode, ASTFalseNode, ASTNotNode, ASTTermNode
 
+from .utility import compose
+
+# each pass can expose work for the others, so a single sweep is not enough:
+# simplify_tautologies_contradictions turns "b || !!b" into TRUE, but it runs
+# last, so without another sweep "a && (( b || !!b ))" would be left as
+# AND(a, TRUE) instead of collapsing to a
+MAX_OPTIMIZATION_PASSES = 10
+
+def optimize(node: ASTNode, max_passes: int = MAX_OPTIMIZATION_PASSES) -> ASTNode:
+    """Apply the transformations repeatedly until the tree stops changing."""
+    single_pass = compose(
+        fold_constants,
+        flatten_nested_operators,
+        deduplicate_operands,
+        simplify_tautologies_contradictions,
+    )
+    previous = repr(node)
+    for _ in range(max_passes):
+        node = single_pass(node)
+        current = repr(node)
+        if current == previous:  # reached a fixed point, nothing left to do
+            break
+        previous = current
+    return node
+
 def fold_constants(node: ASTNode) -> ASTNode:
     match node:
         case ASTAndNode(children=children):

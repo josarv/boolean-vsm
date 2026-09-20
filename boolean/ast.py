@@ -34,8 +34,10 @@ class ASTAndNode:
 
     def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
         if not self.children:
-            return inverted_index.universe_postings() # and identity
-        result = self.children[0].evaluate(inverted_index)
+            return inverted_index.universe_postings().copy() # and identity
+        # copy: the first operand may be a posting list owned by the index, and
+        # the in-place operators below would otherwise corrupt it
+        result = self.children[0].evaluate(inverted_index).copy()
         for child in self.children[1:]:
             result &= child.evaluate(inverted_index)
             if not result:  # short circuit
@@ -53,7 +55,8 @@ class ASTOrNode:
         if not self.children:
             return inverted_index.empty_postings()
         universe = inverted_index.universe_postings()
-        result = self.children[0].evaluate(inverted_index)
+        # copy, for the same reason as in ASTAndNode
+        result = self.children[0].evaluate(inverted_index).copy()
         for child in self.children[1:]:
             result |= child.evaluate(inverted_index)
             if result == universe:  # short circuit
@@ -75,7 +78,7 @@ class ASTNotNode:
 
 class ASTTrueNode:
     def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
-        return inverted_index.universe_postings()
+        return inverted_index.universe_postings().copy()
 
     def __repr__(self) -> str:
         return "TRUE"
@@ -86,3 +89,18 @@ class ASTFalseNode:
 
     def __repr__(self) -> str:
         return "FALSE"
+
+class ASTIdentityNode:
+    """Placeholder for an empty group, e.g. the "(( ))" in "a && (( ))".
+
+    Which constant an empty group stands for depends on the operator that
+    contains it: it is TRUE under AND ("a && (( ))" == "a") but FALSE under OR
+    ("a || (( ))" == "a"). The parser knows that context and replaces this node
+    with the right constant, so it never survives to evaluation.
+    """
+
+    def evaluate(self, inverted_index: "InvertedIndex") -> PostingList:
+        raise RuntimeError("ASTIdentityNode must be resolved by the parser before evaluation")
+
+    def __repr__(self) -> str:
+        return "IDENTITY"

@@ -11,7 +11,11 @@ class PostingList(Protocol):
     def __ior__(self, other) -> "PostingList": ...
     def __sub__(self, other) -> "PostingList": ...
     def __isub__(self, other) -> "PostingList": ...
+    def __eq__(self, other) -> bool: ...
     def add(self, item: int) -> None: ...
+    # the in-place operators mutate the receiver, so anything that starts from a
+    # posting list owned by the index must copy it first
+    def copy(self) -> "PostingList": ...
 
 
 class SetPostingList:
@@ -66,5 +70,13 @@ class SetPostingList:
             self._set -= set(other)
         return self
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, SetPostingList):
+            return self._set == other._set
+        return NotImplemented
+
     def add(self, item: int) -> None:
         self._set.add(item)
+
+    def copy(self) -> "PostingList":
+        return SetPostingList(self._set)

@@ -1,5 +1,1 @@
-gensim>=4.3.3,<5.0.0
-language-tool-python>=2.9.1,<3.0.0
-pot>=0.9.5,<1.0.0
 nltk==3.9.1
-pipdeptree

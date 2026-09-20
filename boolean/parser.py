@@ -1,6 +1,16 @@
 from typing import Protocol, List, Callable
 from re import compile, split
-from .ast import AST, ASTNode, ASTAndNode, ASTOrNode, ASTNotNode, ASTTermNode, ASTTrueNode, ASTFalseNode
+from .ast import (
+    AST,
+    ASTNode,
+    ASTAndNode,
+    ASTOrNode,
+    ASTNotNode,
+    ASTTermNode,
+    ASTTrueNode,
+    ASTFalseNode,
+    ASTIdentityNode,
+)
 
 class Parser(Protocol):
     def parse(self, query: str) -> AST: ...
@@ -23,8 +33,14 @@ class RecursiveDescentParser:
         self.tokens = self.TOKEN_REGEX.findall(query)
         self.position = 0
         root = self._parse_expr()
-        if root is None:
-            root = ASTFalseNode()  # empty query evaluates to false
+        # every token must be consumed, otherwise we would silently drop part of
+        # the query, e.g. "a )) && b" would quietly evaluate as just "a"
+        if self._current() is not None:
+            raise SyntaxError(
+                f"Unexpected token '{self._current()}' at position {self.position}"
+            )
+        if root is None or isinstance(root, ASTIdentityNode):
+            root = ASTFalseNode()  # an empty query matches nothing
         return AST(query, root)
 
     # EXPR -> OR_EXPR
@@ -39,44 +55,27 @@ class RecursiveDescentParser:
         if not self._current() == "||":
             return node
         # if there is, parse all operands into a list
-        children = [node] if node else [ASTFalseNode()]  # handle dangling operator
+        # FALSE is the identity of OR, so it covers both a dangling operator and
+        # an empty group ("a || (( ))" == "a")
+        children = [self._resolve_identity(node, ASTFalseNode)]
         # loop to parse all subsequent operands
         while self._accept("||"):
             next_node = self._parse_and()
-            if next_node is None:
-                next_node = ASTFalseNode()  # handle dangling operator
-            children.append(next_node)
+            children.append(self._resolve_identity(next_node, ASTFalseNode))
         return ASTOrNode(children)
 
     # AND_EXPR -> NOT_EXPR { "&&" NOT_EXPR | NOT_EXPR }
     def _parse_and(self) -> ASTNode | None:
-        # # parse first operand
-        # node = self._parse_not()
-        # # if there's no "&&" after it, return it directly
-        # if not self._current() == "&&":
-        #     return node
-        # # if there is, parse all operands into a list
-        # children = [node] if node else [ASTTrueNode()]  # handle dangling operator
-        # # loop to parse all subsequent operands
-        # while self._accept("&&"):
-        #     next_node = self._parse_not()
-        #     if next_node is None:
-        #         next_node = ASTTrueNode()  # handle dangling operator
-        #     children.append(next_node)
-        # return ASTAndNode(children)
         # parse first operand
         node = self._parse_not()
-        children = [node] if node is not None else []
+        children = [] if node is None else [node]
         # loop to parse all subsequent operands
         while True:
             # check for explicit "&&"
             if self._accept("&&"):
                 next_node = self._parse_not()
-                if next_node is None:
-                    next_node = ASTTrueNode()
-                children.append(next_node)
-                # if next_node is not None:
-                #     children.append(next_node)
+                # a dangling operator leaves a hole, same as an empty group
+                children.append(ASTIdentityNode() if next_node is None else next_node)
             # check for implicit AND (no operator, just juxtaposition)
             elif self._current() and self._current() not in {"||", "))"}:
                 next_node = self._parse_not()
@@ -86,25 +85,28 @@ class RecursiveDescentParser:
                 break
         if not children:
             return None
+        # a lone operand is passed up untouched: if it is an empty group, the
+        # enclosing OR (or the root) decides what it stands for, not this AND
         if len(children) == 1:
             return children[0]
-        return ASTAndNode(children)
+        # AND does apply, so any hole among the operands is its identity, TRUE
+        # ("a && (( ))" == "a")
+        return ASTAndNode([self._resolve_identity(child, ASTTrueNode) for child in children])
 
     # NOT_EXPR -> "!!" NOT_EXPR | "((" EXPR ")) | TERM
     def _parse_not(self) -> ASTNode | None:
         if self._accept("!!"):
-            child = self._parse_not()
-            if child is None:
-                child = ASTFalseNode()
+            # nothing to negate ("!!" alone, or "!!(( ))") negates FALSE
+            child = self._resolve_identity(self._parse_not(), ASTFalseNode)
             return ASTNotNode(child)
         elif self._accept("(("):
             node = self._parse_expr()
-            # here we're kind of fucked, as we don't know which is the identity
-            # term && (( )) -> term && true, but term || (( )) -> term || false
-            # should introduce context dependent astidentitynode
-            if node is None:
-                return ASTTrueNode()
             self._expect("))")
+            # an empty group has no constant value of its own: "term && (( ))"
+            # means "term && true", but "term || (( ))" means "term || false".
+            # the enclosing operator resolves it (see _parse_and / _parse_or).
+            if node is None:
+                return ASTIdentityNode()
             return node
         else:
             return self._parse_term()
@@ -121,6 +123,14 @@ class RecursiveDescentParser:
             return ASTFalseNode()
         else:
             return ASTTermNode(term)
+
+    # replaces a missing operand or an empty group with the identity element of
+    # the enclosing operator (TRUE for AND, FALSE for OR)
+    @staticmethod
+    def _resolve_identity(node: ASTNode | None, identity: type) -> ASTNode:
+        if node is None or isinstance(node, ASTIdentityNode):
+            return identity()
+        return node
 
     # checks and consumes a token if present
     def _accept(self, token: str) -> bool:
@@ -146,8 +156,6 @@ def preserve_boolean_operators(preprocessing_pipeline: Callable[[str], list[str]
     operator_regex = compile(r"&&|\|\||!!|\(\(|\)\)|#\w+")  # tokenizer might split # + true/false
     def wrapper(query_string: str) -> str:
         try:
-            # add spaces around double parentheses to ensure they are treated as separate tokens
-            # query_string = query_string.replace('((', ' (( ').replace('))', ' )) ')
             substrings = split(operator_regex, query_string)
             operators = operator_regex.findall(query_string)
             processed_substrings = []

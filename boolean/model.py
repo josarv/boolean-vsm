@@ -4,8 +4,7 @@ from .ast import ASTNode
 from .postings import SetPostingList
 from .index import InvertedIndex, SimpleInvertedIndex
 from .parser import Parser, RecursiveDescentParser, preserve_boolean_operators
-from .optimization import fold_constants, flatten_nested_operators, deduplicate_operands, simplify_tautologies_contradictions
-from .utility import compose
+from .optimization import optimize
 
 
 class BooleanIRModel:
@@ -18,12 +17,7 @@ class BooleanIRModel:
         self._preprocessing_pipeline = preprocessing_pipeline
         self._query_pipeline: Callable[[str], str] = preserve_boolean_operators(preprocessing_pipeline)
         self._parser = parser or RecursiveDescentParser()
-        self._ast_pipeline: Callable[[ASTNode], ASTNode] = compose(
-            fold_constants,
-            flatten_nested_operators,
-            deduplicate_operands,
-            simplify_tautologies_contradictions,
-        )
+        self._ast_pipeline: Callable[[ASTNode], ASTNode] = optimize
         self._index = index or SimpleInvertedIndex(posting_list_factory=lambda: SetPostingList())
 
     def index_document(self, filename: str, content: str) -> None:
